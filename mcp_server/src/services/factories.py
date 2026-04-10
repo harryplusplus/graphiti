@@ -17,6 +17,7 @@ except ImportError:
 # Kuzu support removed - FalkorDB is now the default
 from graphiti_core.embedder import EmbedderClient, OpenAIEmbedder
 from graphiti_core.llm_client import LLMClient, OpenAIClient
+from graphiti_core.llm_client.openai_generic_client import OpenAIGenericClient
 from graphiti_core.llm_client.config import LLMConfig as GraphitiLLMConfig
 
 # Try to import additional providers if available
@@ -114,29 +115,24 @@ class LLMClientFactory:
                 api_key = config.providers.openai.api_key
                 _validate_api_key('OpenAI', api_key, logger)
 
-                from graphiti_core.llm_client.config import LLMConfig as CoreLLMConfig
+                from graphiti_core.llm_client.config import DEFAULT_TEMPERATURE, LLMConfig as CoreLLMConfig
 
-                # Use the same model for both main and small model slots
-                small_model = config.model
-
+                # Use OpenAIGenericClient for Ollama/OpenAI-compatible backends
+                # OpenAIGenericClient uses chat.completions.create (not responses.parse)
+                # which is compatible with Ollama and other OpenAI-compatible APIs
                 llm_config = CoreLLMConfig(
                     api_key=api_key,
+                    base_url=config.providers.openai.api_url,
                     model=config.model,
-                    small_model=small_model,
-                    temperature=config.temperature,
+                    temperature=config.temperature if config.temperature is not None else DEFAULT_TEMPERATURE,
                     max_tokens=config.max_tokens,
                 )
 
-                # Check if this is a reasoning model (o1, o3, gpt-5 family)
-                reasoning_prefixes = ('o1', 'o3', 'gpt-5')
-                is_reasoning_model = config.model.startswith(reasoning_prefixes)
-
-                # Only pass reasoning/verbosity parameters for reasoning models (gpt-5 family)
-                if is_reasoning_model:
-                    return OpenAIClient(config=llm_config, reasoning='minimal', verbosity='low')
-                else:
-                    # For non-reasoning models, explicitly pass None to disable these parameters
-                    return OpenAIClient(config=llm_config, reasoning=None, verbosity=None)
+                # Use OpenAIGenericClient instead of OpenAIClient
+                # OpenAIClient uses responses.parse() which is OpenAI-only
+                # OpenAIGenericClient uses chat.completions.create with response_format
+                # which works with Ollama and other OpenAI-compatible providers
+                return OpenAIGenericClient(config=llm_config)
 
             case 'azure_openai':
                 if not HAS_AZURE_LLM:
