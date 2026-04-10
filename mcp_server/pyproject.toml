@@ -14,9 +14,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-azure = [
-    "azure-identity>=1.21.0",
-]
+azure = ["azure-identity>=1.21.0"]
 providers = [
     "google-genai>=1.62.0",
     "anthropic>=0.49.0",
@@ -71,3 +69,6 @@ dev = [
     "pytest-xdist>=3.8.0",
     "ruff>=0.7.1",
 ]
+
+[tool.uv.sources]
+graphiti-core = { path = "..", editable = true }

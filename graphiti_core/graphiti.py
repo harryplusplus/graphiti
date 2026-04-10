@@ -221,7 +221,7 @@ class Graphiti:
         if cross_encoder:
             self.cross_encoder = cross_encoder
         else:
-            self.cross_encoder = OpenAIRerankerClient()
+            self.cross_encoder = OpenAIRerankerClient(llm_client.config)
 
         # Initialize tracer
         self.tracer = create_tracer(tracer, trace_span_prefix)
